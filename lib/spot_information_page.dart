@@ -1,7 +1,17 @@
 import "package:flutter/material.dart";
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:stamprally_v2/main.dart';
+import 'package:stamprally_v2/firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SpotInformationPage extends StatefulWidget {
-  const SpotInformationPage({super.key});
+
+  final Map<String, dynamic> spotInfo;
+  final List reviewsList;
+
+  const SpotInformationPage({Key? key, required this.spotInfo, required this.reviewsList}) : super(key: key);
 
   @override
   State<SpotInformationPage> createState() => _SpotInformationPageState();
@@ -9,8 +19,16 @@ class SpotInformationPage extends StatefulWidget {
 
 class _SpotInformationPageState extends State<SpotInformationPage>
      with SingleTickerProviderStateMixin  {
+
+  late String spotId;
+  late FirebaseStorage _storage;
+  late FirebaseFirestore _firestore;
+  late Map<String, dynamic> _spotInfo = {};
+  late List _reviewsList = [];
+  String _imageUrl = '';
   TabController? _tabController;
   bool imgVisibility = true;
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +44,19 @@ class _SpotInformationPageState extends State<SpotInformationPage>
       setState(() {});
 
     });
+
+    setState(() {
+      _spotInfo = widget.spotInfo;
+      _reviewsList = widget.reviewsList;
+    });
+    // Firebase.initializeApp(
+    //   options: DefaultFirebaseOptions.currentPlatform,
+    // );
+    // // Firebase Storageのインスタンスを初期化
+    // _storage = FirebaseStorage.instance;
+    // _firestore = FirebaseFirestore.instance;
+    // 画像のダウンロードURLを取得
+    // _getData();
   }
 
   @override
@@ -33,6 +64,35 @@ class _SpotInformationPageState extends State<SpotInformationPage>
     _tabController?.dispose();
     super.dispose();
   }
+  // Future<void> _getReviews(List reviews) async {
+  //   // 画像のダウンロードURLを取得
+  //   CollectionReference collection = _firestore.collection('Reviews');
+  //   List getReviews = [];
+  //   for (var i = 0; i < reviews.length; i++) {
+  //     DocumentSnapshot snapshot = await collection.doc(reviews[i]).get();
+  //     getReviews.add(snapshot.data() as Map<String, dynamic>);
+  //   }
+
+  //   setState(() {
+  //     reviewsList = getReviews;
+  //   });
+  // }
+  // Future<void> getImageUrl(String imagePath) async {
+  //   // 画像のダウンロードURLを取得
+  //   String downloadUrl = await _storage.ref().child(imagePath).getDownloadURL();
+  //   setState(() {
+  //     _imageUrl = downloadUrl;
+  //   });
+  // }
+  // Future<void> _getData() async {
+  //   DocumentSnapshot snapshot = await _firestore.collection('Spots').doc(spotId).get();
+  //   print(snapshot.data());
+  //   setState(() {
+  //     spot_info = snapshot.data() as Map<String, dynamic>; // フィールド名に適切なものを使用してください
+  //   });
+  //   getImageUrl(spot_info["images"][0]);
+  //   _getReviews(spot_info["reviews"]);
+  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,13 +140,17 @@ class _SpotInformationPageState extends State<SpotInformationPage>
               padding: const EdgeInsets.all(8.0),
               child: Visibility(
                 visible: imgVisibility,
-                child: Image.asset("images/hetumiya.jpg")
+                child: _spotInfo["imageUrl"] != ''
+                  ? Image(image: CachedNetworkImageProvider(_spotInfo["imageUrl"]))
+                  : const Center(child:CircularProgressIndicator()),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
-                "ここにタイトルが入る",
+                _spotInfo["name"] != null
+                  ? _spotInfo["name"]
+                  : "...",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -117,7 +181,9 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                           Padding(
                             padding: const EdgeInsets.all(8),
                             child: Text(
-                              "説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる",
+                              _spotInfo["explanation"] != null
+                                ? _spotInfo["explanation"]
+                                : "...",
                               style: TextStyle(
                                 fontSize: 13,
                               ),
@@ -134,7 +200,11 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                     children: [
                                       Icon(Icons.location_on, color: Colors.black54),
                                       const SizedBox(width: 8,),
-                                      Text("神奈川県横浜市")
+                                      Text(
+                                        _spotInfo["address"] != null
+                                          ? _spotInfo["address"]
+                                          : "...",
+                                      )
                                     ],
                                   ),
                                 ),
@@ -145,7 +215,11 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                     children: [
                                       Icon(Icons.web, color: Colors.black54),
                                       const SizedBox(width: 8,),
-                                      Text("https://www.google.com")
+                                      Text(
+                                        _spotInfo["website"] != null
+                                          ? _spotInfo["website"]
+                                          : "http://example.com",
+                                      )
                                     ],
                                   ),
                                 ),
@@ -156,7 +230,11 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                     children: [
                                       Icon(Icons.schedule, color: Colors.black54),
                                       const SizedBox(width: 8,),
-                                      Text("12:00 ~ 18:00")
+                                      Text(
+                                        _spotInfo["openHours"] != null
+                                          ? _spotInfo["openHours"]
+                                          : "...",
+                                      )
                                     ],
                                   ),
                                 ),
@@ -167,7 +245,11 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                     children: [
                                       Icon(Icons.currency_yen, color: Colors.black54),
                                       const SizedBox(width: 8,),
-                                      Text("入場料 120円")
+                                      Text(
+                                        _spotInfo["admissionFee"] != null
+                                          ? _spotInfo["admissionFee"]
+                                          : "...",
+                                      )
                                     ],
                                   ),
                                 ),
@@ -179,8 +261,8 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                       ),
                     ),
                     ListView.separated(
-                      itemCount: 5,
-                      itemBuilder: (context, int position) {
+                      itemCount: _reviewsList.length,
+                      itemBuilder: (context, int index) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                           child: Column(
@@ -193,17 +275,17 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                     for (int i = 0; i < 5; i++)
                                       Icon(
                                         Icons.star,
-                                        color: (i < 4) ? Colors.orange : Colors.grey,
+                                        color: (i < _reviewsList[index]["star"].round()) ? Colors.orange : Colors.grey,
                                         size: 20,
                                       )
                                   ],),
                                   SizedBox(width: 10,),
-                                  Text("4.5", style: TextStyle(fontSize: 18),),
+                                  Text(_reviewsList[index]["star"].toString(), style: TextStyle(fontSize: 18),),
                                 ]
                               ),
                               SizedBox(height: 2,),
                               Text(
-                                "口コミタイトル",
+                                _reviewsList[index]["title"],
                                 style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.bold
@@ -211,7 +293,7 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                               ),
                               SizedBox(height: 8,),
                               Text(
-                                "口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ口コミ"
+                                _reviewsList[index]["message"]
                               )
                             ]
                           ),

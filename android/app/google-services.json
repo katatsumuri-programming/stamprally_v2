@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "828706665996",
+    "project_id": "sightseeing-sns",
+    "storage_bucket": "sightseeing-sns.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:828706665996:android:a21b3bce38b24bc066e029",
+        "android_client_info": {
+          "package_name": "com.example.stamprally_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "828706665996-vpjk0eru5m51v6njv0n4k7lm0umqu3v6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkxn-yVQlHFgylBy7O5NCl1rIyeW_qUPo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "828706665996-vpjk0eru5m51v6njv0n4k7lm0umqu3v6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

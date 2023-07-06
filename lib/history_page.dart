@@ -82,13 +82,13 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ),
             onTap: () {
-              Navigator.push(
-                context, MaterialPageRoute(
-                  builder: (context) => SpotInformationPage(),
-                  //以下を追加
-                  fullscreenDialog: true,
-                )
-              );
+              // Navigator.push(
+              //   context, MaterialPageRoute(
+              //     builder: (context) => SpotInformationPage(id:"KIBf5dQHAxQELOSbU8IR"),
+              //     //以下を追加
+              //     fullscreenDialog: true,
+              //   )
+              // );
             },
           );
         },

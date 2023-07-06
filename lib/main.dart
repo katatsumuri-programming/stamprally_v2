@@ -1,12 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:stamprally_v2/rewards_model.dart';
+import 'package:stamprally_v2/project_information_page_mdoel.dart';
 import 'package:stamprally_v2/stamp_page.dart';
 import 'package:stamprally_v2/home_page.dart';
 import 'package:stamprally_v2/map_page.dart';
 import 'package:stamprally_v2/history_page.dart';
 import 'package:stamprally_v2/others_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:stamprally_v2/firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:stamprally_v2/rewards_model.dart';
+import 'package:stamprally_v2/spot_information_model.dart';
 
-void main() {
-  runApp(MyApp());
+
+
+late FirebaseStorage _storage;
+late FirebaseFirestore _firestore;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ProjectInformationPageModel>(
+          create: (_) => ProjectInformationPageModel(),
+        ),
+        ChangeNotifierProvider<RewardsModel>(
+          create: (_) => RewardsModel(),
+        ),
+        ChangeNotifierProvider<SpotInformationModel>(
+          create: (_) => SpotInformationModel(),
+        ),
+      ],
+    child: MyApp()
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -58,4 +90,63 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
   void _onItemTapped(int index) => setState(() => _currentIndex = index );
+}
+
+Future<String> getImageUrl(String imagePath, FirebaseStorage storage) async {
+  // 画像のダウンロードURLを取得
+  String downloadUrl = await storage.ref().child(imagePath).getDownloadURL();
+  return downloadUrl;
+}
+
+Future<List> getRewards(List rewards, FirebaseFirestore firestore, FirebaseStorage storage) async {
+
+  // 画像のダウンロードURLを取得
+  CollectionReference collection = firestore.collection('Rewards');
+  List getRewardsList = [];
+  for (var i = 0; i < rewards.length; i++) {
+    DocumentSnapshot snapshot = await collection.doc(rewards[i]).get();
+    getRewardsList.add(snapshot.data() as Map<String, dynamic>);
+
+    getRewardsList[i]["imageUrl"] = await getImageUrl(getRewardsList[i]["images"][0], storage);
+  }
+  return getRewardsList;
+
+
+
+}
+
+Future<List> getSpots(List spots, FirebaseFirestore firestore, FirebaseStorage storage) async {
+
+  // 画像のダウンロードURLを取得
+  CollectionReference collection = firestore.collection('Spots');
+  List getSpotsList = [];
+  for (var i = 0; i < spots.length; i++) {
+    DocumentSnapshot snapshot = await collection.doc(spots[i]).get();
+    getSpotsList.add(snapshot.data() as Map<String, dynamic>);
+
+    getSpotsList[i]["imageUrl"] = await getImageUrl(getSpotsList[i]["images"][0], storage);
+  }
+  return getSpotsList;
+
+
+
+}
+
+
+Future<List> getReviews(List rewards, FirebaseFirestore firestore) async {
+
+  // 画像のダウンロードURLを取得
+  CollectionReference collection = firestore.collection('Reviews');
+  List getReviewsList = [];
+  for (var i = 0; i < rewards.length; i++) {
+    getReviewsList.add([]);
+    for (var j = 0; j < rewards[i]["reviews"].length; j++) {
+      DocumentSnapshot snapshot = await collection.doc(rewards[i]["reviews"][j]).get();
+      getReviewsList[i].add(snapshot.data() as Map<String, dynamic>);
+    }
+
+  }
+
+  return getReviewsList;
+
 }

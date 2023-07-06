@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RewardPage extends StatefulWidget {
-  const RewardPage({super.key});
+  final Map<String, dynamic> rewardData;
+
+  const RewardPage({Key? key, required this.rewardData}) : super(key: key);
 
   @override
   State<RewardPage> createState() => _RewardPageState();
 }
 
 class _RewardPageState extends State<RewardPage> {
+  late Map<String, dynamic> rewardData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      rewardData = widget.rewardData;
+    });
+    print(rewardData);
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,7 +40,9 @@ class _RewardPageState extends State<RewardPage> {
         child: Column(
 
           children: [
-            Image.asset("images/hetumiya.jpg"),
+            rewardData["imageUrl"] != null
+              ? Image(image: CachedNetworkImageProvider(rewardData["imageUrl"]))
+              : const Center(child:CircularProgressIndicator()),
             SizedBox(height: 8,),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -33,7 +50,9 @@ class _RewardPageState extends State<RewardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "ここに特典タイトル",
+                    rewardData["title"] != null
+                      ? rewardData["title"]
+                      : "...",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 20
@@ -43,7 +62,9 @@ class _RewardPageState extends State<RewardPage> {
                   Padding(
                     padding: const EdgeInsets.all(2.0),
                     child: Text(
-                      "説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる説明を入れる",
+                      rewardData["explanation"] != null
+                        ? rewardData["explanation"]
+                        : "...",
                       style: TextStyle(
                         fontSize: 14,
                       ),

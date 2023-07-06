@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:stamprally_v2/rewards_model.dart';
 import 'reward_page.dart';
-
+import 'package:provider/provider.dart';
 class MyRewardsPage extends StatefulWidget {
   const MyRewardsPage({super.key});
 
@@ -46,6 +47,7 @@ class _MyRewardsPageState extends State<MyRewardsPage> {
 
 
 class MyRewardsList extends StatefulWidget {
+
   const MyRewardsList({super.key});
 
   @override
@@ -53,100 +55,111 @@ class MyRewardsList extends StatefulWidget {
 }
 
 class _MyRewardsListState extends State<MyRewardsList> {
+
+
   @override
   Widget build(BuildContext context) {
-    return             Container(
-                padding: const EdgeInsets.all(8.0),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 5,
-                  itemBuilder: (context, int position) {
-                    return InkWell(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical:6),
-                        child: Row(
+    return Consumer<RewardsModel>(builder: (context, model, child) {
+
+      return Container(
+        padding: const EdgeInsets.all(8.0),
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: model.rewardsList.length,
+          itemBuilder: (context, int index) {
+            return InkWell(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical:6),
+                child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.grey, //色
+                              spreadRadius: 0,
+                              blurRadius: 3
+                            ),
+                          ],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child:ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset("images/tile-test.png"),
+                        ),
+                        height: 80,
+                        width: 80,
+                      ),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.only(left:15),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.grey, //色
-                                      spreadRadius: 0,
-                                      blurRadius: 3
-                                    ),
-                                  ],
-                                  borderRadius: BorderRadius.circular(10),
+                              Text(
+                                model.rewardsList[index]["title"] != null
+                                  ? model.rewardsList[index]["title"]
+                                  : "...",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold
                                 ),
-                                child:ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.asset("images/tile-test.png"),
-                                ),
-                                height: 80,
-                                width: 80,
                               ),
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.only(left:15),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "ここにタイトルが入る",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold
-                                        ),
-                                      ),
-                                      const SizedBox(height: 1,),
-                                      Text(
-                                        "応募条件:スタンプ5個以上",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(2.0),
-                                        child: Text(
-                                          "ここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れる",
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 2,
-                                        ),
-                                      ),
-
-                                    ],
-                                  ),
+                              const SizedBox(height: 1,),
+                              Text(
+                                model.rewardsList[index]["conditions"] != null
+                                  ? "応募条件: " + model.rewardsList[index]["conditions"]
+                                  : "...",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
                                 ),
-                              )
-                            ]
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Text(
+                                  model.rewardsList[index]["explanation"] != null
+                                    ? model.rewardsList[index]["explanation"]
+                                    : "...",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ),
+
+                            ],
                           ),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context, MaterialPageRoute(
-                            builder: (context) => RewardPage(),
-                            //以下を追加
-                            fullscreenDialog: true,
-                          )
-                        );
-                      },
-                    );
-                  },
-                  separatorBuilder: (context, index) {
-                    return const Padding(
-                      padding: EdgeInsets.only(right: 10, left: 10),
-                      child: Divider(
-                        height: 1,
+                        ),
+                      )
+                    ]
+                  ),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context, MaterialPageRoute(
+                    builder: (context) => RewardPage(rewardData: model.rewardsList[index]),
+                    //以下を追加
+                    fullscreenDialog: true,
+                  )
+                );
+              },
+            );
+          },
+          separatorBuilder: (context, index) {
+            return const Padding(
+              padding: EdgeInsets.only(right: 10, left: 10),
+              child: Divider(
+                height: 1,
 
-                      ),
-                    );
-                  },
-                ),
+              ),
+            );
+          },
+        ),
 
-              );
+      );
+    });
   }
 }
