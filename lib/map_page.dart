@@ -1,4 +1,7 @@
 import "package:flutter/material.dart";
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:stamprally_v2/main.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -212,13 +215,29 @@ class MapRallyPage extends StatefulWidget {
 
 class _MapRallyPageState extends State<MapRallyPage> {
   static const genres = ["なんかスタンプラリーの名前", "なんかスタンプラリーの名前"];
+  String test_txt = "";
+
+
+    @override
+  void initState() {
+    super.initState();
+    Future(() async {
+      var spots_info = await getData('get_spots_info', '1');
+      print(spots_info);
+    });
+
+
+    // _getData();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Container(
           color: Colors.red,
-          child: Center(child: Text('ここにマップを入れる', style: TextStyle(fontSize: 20)))
+          child: Center(child: Text(test_txt, style: TextStyle(fontSize: 20)))
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -13,6 +13,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:stamprally_v2/rewards_model.dart';
 import 'package:stamprally_v2/spot_information_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 
 
@@ -149,4 +151,17 @@ Future<List> getReviews(List rewards, FirebaseFirestore firestore) async {
 
   return getReviewsList;
 
+
+
+}
+
+
+Future<List> getData(getDataType,id) async {
+  var response = await http.get(
+    Uri.parse(
+      'http://192.168.1.73:3000',
+    ).replace(queryParameters: {'type':getDataType, 'id':id}),
+  );
+  print(jsonDecode(response.body));
+  return jsonDecode(response.body);
 }
