@@ -1,6 +1,11 @@
 import "package:flutter/material.dart";
 import 'package:stamprally_v2/project_information_page.dart';
-
+import 'package:stamprally_v2/spot_information_page.dart';
+import 'package:stamprally_v2/main.dart';
+import 'package:provider/provider.dart';
+import 'package:stamprally_v2/project_information_page_model.dart';
+import 'package:stamprally_v2/spot_information_model.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 class StampPage extends StatefulWidget {
   const StampPage({super.key});
 
@@ -10,10 +15,34 @@ class StampPage extends StatefulWidget {
 
 class _StampPageState extends State<StampPage> {
   var stamp_total = 5;
-  static const genres = ["スタンプラリー", "スポット", "グルメ", "フォト"];
+  List<Map<String, dynamic>> genres = [];
+  List stampcardList = [];
+  List _images = [];
+  Map<String, dynamic> _spotInfo = {};
+  Map<String, dynamic> _stamprallyInfo = {};
+  bool _is_found_result = true;
+  final TextEditingController _searchFieldController = new TextEditingController();
   @override
   void initState() {
     super.initState();
+    Future(() async {
+
+      stampcardList = await getData('/get/user/stampcard', {'user_id':userId});
+      for (var i = 0; i < stampcardList.length; i++) {
+        if (stampcardList[i]['spot_image'] != null) {
+          _images.add(await getImageUrl(stampcardList[i]['spot_image']));
+        } else if (stampcardList[i]['stamprally_image'] != null) {
+          _images.add(await getImageUrl(stampcardList[i]['stamprally_image']));
+        }
+      }
+      List genres_data = await getData('/get/suggestion_tags', {});
+      for (var i = 0; i < genres_data.length; i++) {
+        genres.add({"name":genres_data[i]['name'], 'isCheck':false});
+      }
+      setState(() {
+
+      });
+    });
   }
   @override
   Widget build(BuildContext context) {
@@ -30,6 +59,7 @@ class _StampPageState extends State<StampPage> {
           ),
         ),
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.all(10.0),
@@ -41,8 +71,29 @@ class _StampPageState extends State<StampPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   )
-
                 ),
+                controller: _searchFieldController,
+                onSubmitted: (text) async {
+                  if (text.isNotEmpty) {
+                    stampcardList = await getData('/get/user/stampcard/search', {'user_id':userId, 'text':text});
+                  } else {
+                    stampcardList = await getData('/get/user/stampcard', {'user_id':userId});
+                  }
+                  for (var i = 0; i < stampcardList.length; i++) {
+                    if (stampcardList[i]['spot_image'] != null) {
+                      _images.add(await getImageUrl(stampcardList[i]['spot_image']));
+                    } else if (stampcardList[i]['stamprally_image'] != null) {
+                      _images.add(await getImageUrl(stampcardList[i]['stamprally_image']));
+                    }
+                  }
+                  _is_found_result = stampcardList.isNotEmpty;
+                  for (var i = 0; i < genres.length; i++) {
+                    genres[i]['isCheck'] = false;
+                  }
+                  setState(() {
+
+                  });
+                }
               ),
             ),
             Padding(
@@ -51,32 +102,78 @@ class _StampPageState extends State<StampPage> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    for (final genre in genres)
+                    for (var i = 0; i < genres.length; i++)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal:5),
-                        child: Container(
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(999999),border: Border.all(color: Colors.black54),),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical:6, horizontal:15),
-                            child: Text(
-                              genre,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                        child: InkWell(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999999),
+                              border: Border.all(color: genres[i]['isCheck'] ? Colors.blue : Colors.black54),
+                              color: genres[i]['isCheck'] ? Colors.lightBlue.withOpacity(0.1) : Colors.white,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical:6, horizontal:15),
+                              child: Text(
+                                genres[i]['name'],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: genres[i]['isCheck'] ? Colors.blue : Colors.black87,
+                                ),
                               ),
                             ),
                           ),
+                          onTap: () async {
+                            if (!genres[i]["isCheck"]) {
+                              genres[i]["isCheck"] = true;
+
+                            } else {
+                              genres[i]["isCheck"] = false;
+                            }
+                            List tags = [];
+                            genres.forEach((value) {
+                              if (value['isCheck']) {
+                                tags.add(value['name']);
+                              }
+                            });
+
+                            if (tags.length > 0) {
+                              String tagsString = tags.join(',');
+                              stampcardList = await getData('/get/user/stampcard/tag', {'user_id':userId, 'tag':tagsString});
+                            } else {
+                              stampcardList = await getData('/get/user/stampcard', {'user_id':userId});
+                            }
+                            for (var i = 0; i < stampcardList.length; i++) {
+                              if (stampcardList[i]['spot_image'] != null) {
+                                _images.add(await getImageUrl(stampcardList[i]['spot_image']));
+                              } else if (stampcardList[i]['stamprally_image'] != null) {
+                                _images.add(await getImageUrl(stampcardList[i]['stamprally_image']));
+                              }
+                            }
+                            _is_found_result = stampcardList.isNotEmpty;
+                            _searchFieldController.clear();
+                            setState(() {
+
+                            });
+                          },
                         ),
                       ),
                   ],
                 ),
               ),
             ),
+            Visibility(
+              visible: !_is_found_result,
+              child: Padding(
+                padding: const EdgeInsets.all(30.0),
+                child: Text("見つかりませんでした"),
+              ),
+            ),
             Flexible(
               child: ListView.separated(
-                itemCount: 5,
-                itemBuilder: (context, int position) {
+                itemCount: stampcardList.length,
+                itemBuilder: (context, int index) {
                   return InkWell(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal:15.0, vertical:10.0),
@@ -95,7 +192,12 @@ class _StampPageState extends State<StampPage> {
                             ),
                             child:ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.asset("images/tile-test.png"),
+                              child: _images[index] != ''
+                                ? FittedBox(
+                                  fit: BoxFit.fitHeight,
+                                  child: Image(image: CachedNetworkImageProvider(_images[index]))
+                                )
+                                : const Center(child:CircularProgressIndicator()),
                             ),
                             height: 90,
                             width: 90,
@@ -107,20 +209,38 @@ class _StampPageState extends State<StampPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "ここにタイトルが入る",
+                                    stampcardList[index]["stamprally_title"] != null
+                                      ? stampcardList[index]["stamprally_title"]
+                                      : stampcardList[index]["spot_title"] != null
+                                      ? stampcardList[index]["spot_title"]
+                                      : "",
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold
                                     ),
                                   ),
                                   Visibility(
-                                    visible: false,
+                                    visible: (stampcardList[index]["stamprally_venue"] != null && stampcardList[index]["stamprally_period"] != null),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const SizedBox(height: 7,),
-                                        Text("場所:日本"),
-                                        Text("期間:2022/12/12 ~ 2022/10/12"),
+                                        Text(
+
+                                          stampcardList[index]["stamprally_venue"] != null
+                                          ? '場所:${stampcardList[index]["stamprally_venue"]}'
+                                          : "",
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                        Text(
+                                          stampcardList[index]["stamprally_period"] != null
+                                          ? '期間:${stampcardList[index]["stamprally_period"]}'
+                                          : "",
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -133,12 +253,17 @@ class _StampPageState extends State<StampPage> {
                                         Padding(
                                           padding: const EdgeInsets.all(2.0),
                                           child: Text(
-                                            "ここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れる",
+                                            stampcardList[index]["stamprally_explanation"] != null
+                                              ? stampcardList[index]["stamprally_explanation"]
+                                              : stampcardList[index]["spot_explanation"] != null
+                                              ? stampcardList[index]["spot_explanation"]
+                                              : "",
                                             style: TextStyle(
                                               fontSize: 13,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                             maxLines: 2,
+
                                           ),
                                         ),
                                       ],
@@ -151,11 +276,53 @@ class _StampPageState extends State<StampPage> {
                         ],
                       ),
                     ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ProjectInformationPage()),
-                      );
+                    onTap: () async {
+
+                      print(stampcardList[index]["stamprally_venue"]);
+                      if (stampcardList[index]["spot_id"] != null) {
+                        _spotInfo = {
+                          "id": stampcardList[index]["spot_id"],
+                          "title": stampcardList[index]["spot_title"],
+                          "explanation": stampcardList[index]["spot_explanation"],
+                          "image": stampcardList[index]["spot_image"],
+                          "tag": stampcardList[index]["spot_tag"],
+                          "bookmark": stampcardList[index]["spot_bookmark"],
+                          "star": stampcardList[index]["spot_star"],
+                          "location": stampcardList[index]["spot_location"],
+                          "website": stampcardList[index]["spot_website"],
+                          "address": stampcardList[index]["spot_address"],
+                          "openHours": stampcardList[index]["spot_openHours"],
+                          "admissionFee": stampcardList[index]["spot_admissionFee"],
+                          "stamp_rally": stampcardList[index]["spot_stamp_rally"]
+                        };
+                        Provider.of<SpotInformationModel>(context, listen: false).updateImageUrl(await getImageUrl(stampcardList[index]["spot_image"]));
+                        Provider.of<SpotInformationModel>(context, listen: false).updateSpotInfo(_spotInfo);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SpotInformationPage()),
+                        );
+                      } else if (stampcardList[index]["stamp_rally_id"] != null) {
+                        _stamprallyInfo = {
+                          "id": stampcardList[index]["stamp_rally_id"],
+                          "title": stampcardList[index]["stamprally_title"],
+                          "explanation": stampcardList[index]["stamprally_explanation"],
+                          "image": stampcardList[index]["stamprally_image"],
+                          "tag": stampcardList[index]["stamprally_tag"],
+                          "bookmark": stampcardList[index]["stamprally_bookmark"],
+                          "star": stampcardList[index]["stamprally_star"],
+                          "period": stampcardList[index]["stamprally_period"],
+                          "website": stampcardList[index]["stamprally_website"],
+                          "venue": stampcardList[index]["stamprally_venue"],
+                          "reward": stampcardList[index]["stamprally_reward"]
+                        };
+                        print(_stamprallyInfo);
+                        Provider.of<ProjectInformationPageModel>(context, listen: false).updateImageUrl(await getImageUrl(stampcardList[index]["stamprally_image"]));
+                        Provider.of<ProjectInformationPageModel>(context, listen: false).updateStamprallyInfo(_stamprallyInfo);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProjectInformationPage()),
+                        );
+                      }
                     },
                   );
                 },
@@ -164,7 +331,6 @@ class _StampPageState extends State<StampPage> {
                     padding: EdgeInsets.only(right: 10, left: 10),
                     child: Divider(
                       height: 1,
-
                     ),
                   );
                 },

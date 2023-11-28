@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:stamprally_v2/main.dart';
-import 'package:stamprally_v2/rewards_model.dart';
+import 'package:stamprally_v2/rewards_list_model.dart';
 import 'package:stamprally_v2/spot_information_page.dart';
 import 'package:stamprally_v2/spot_information_model.dart';
 import 'package:stamprally_v2/my_rewards_page.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:stamprally_v2/firebase_options.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:stamprally_v2/project_information_page_mdoel.dart';
+import 'package:stamprally_v2/project_information_page_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
+import 'package:stamprally_v2/map_model.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:math';
 class ProjectInformationPage extends StatefulWidget {
+  // final Map projectInfo;
+  // final String imageUrl;
   const ProjectInformationPage({super.key});
 
   @override
@@ -21,45 +23,61 @@ class ProjectInformationPage extends StatefulWidget {
 
 class _ProjectInformationPageState extends State<ProjectInformationPage> {
 
-  late FirebaseStorage _storage;
-  late FirebaseFirestore _firestore;
+  late Map _projectInfo = {};
+  late List _rewardsList = [];
+  late List _spotsList = [];
   late String _imageUrl = "";
-  late ProjectInformationPageModel projectInformationPageModel;
-  late RewardsModel rewardsModel;
-  late SpotInformationModel spotInformationModel;
   Map<String, dynamic> stamprally_info = {};
 
 
   @override
   void initState() {
+
     super.initState();
-    Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    // Firebase Storageのインスタンスを初期化
-    _storage = FirebaseStorage.instance;
-    _firestore = FirebaseFirestore.instance;
-    projectInformationPageModel = Provider.of<ProjectInformationPageModel>(context, listen: false);
-    rewardsModel = Provider.of<RewardsModel>(context, listen: false);
-    spotInformationModel = Provider.of<SpotInformationModel>(context, listen: false);
-    // 画像のダウンロードURLを取得
-    _getData();
+    // _projectInfo = widget.projectInfo;
+    // _imageUrl = widget.imageUrl;
+
+    _projectInfo = Provider.of<ProjectInformationPageModel>(context, listen: false).stamprallyInfo;
+    Future(() async {
+      print("AA");
+      _rewardsList = await getData('/get/rewards', {'id':_projectInfo["id"]}) ;
+      _spotsList = await getData('/get/spots/info', {'id':_projectInfo["id"]}) ;
+      Provider.of<RewardsListModel>(context, listen: false).updateRewardList(_rewardsList);
+      Provider.of<ProjectInformationPageModel>(context, listen: false).updateSpotList(_spotsList);
+      List spotImages = [];
+      List latAvg = [];
+      List lngAvg = [];
+      for (var i = 0; i < _spotsList.length; i++) {
+        spotImages.add(await getImageUrl(_spotsList[i]['image']));
+        latAvg.add(_spotsList[i]['location']['y']);
+        lngAvg.add(_spotsList[i]['location']['x']);
+      }
+      Provider.of<ProjectInformationPageModel>(context, listen: false).updateImageUrlList(spotImages);
+
+      List rewardImages = [];
+      for (var i = 0; i < _rewardsList.length; i++) {
+        rewardImages.add(await getImageUrl(_rewardsList[i]['image']));
+      }
+      Provider.of<RewardsListModel>(context, listen: false).updateImageUrlList(rewardImages);
+
+
+      Provider.of<ProjectInformationPageModel>(context, listen: false).updateBounds(
+        LatLngBounds.fromPoints(
+          [
+            LatLng(latAvg.reduce((curr, next) => curr > next ? curr : next), lngAvg.reduce((curr, next) => curr > next ? curr : next)),
+            LatLng(latAvg.reduce((curr, next) => curr < next ? curr : next), lngAvg.reduce((curr, next) => curr < next ? curr : next)),
+          ],
+        )
+      );
+
+      setState(() {});
+    });
+
+
+
   }
 
 
-  Future<void> _getData() async {
-    DocumentSnapshot snapshot = await _firestore.collection('StampRallies').doc('pPAHgq72tzGZGsMDz2Vr').get();
-    // print(snapshot.data());
-
-    projectInformationPageModel.updateStamprallyInfo(snapshot.data() as Map<String, dynamic>);
-
-    String downloadUrl = await _storage.ref().child(projectInformationPageModel.stamprallyInfo["images"][0]).getDownloadURL();
-    projectInformationPageModel.updateImageUrl(downloadUrl);
-
-    rewardsModel.updateRewardList(await getRewards(projectInformationPageModel.stamprallyInfo["rewards"], _firestore, _storage));
-    spotInformationModel.updateSpotsList(await getSpots(projectInformationPageModel.stamprallyInfo["spots"], _firestore, _storage));
-    spotInformationModel.updateReviewsList(await getReviews(spotInformationModel.spotsList, _firestore));
-  }
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -82,7 +100,7 @@ class _ProjectInformationPageState extends State<ProjectInformationPage> {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           physics: NeverScrollableScrollPhysics(),
           children: <Widget>[
             OverviewTabView(),
@@ -103,6 +121,13 @@ class OverviewTabView extends StatefulWidget {
 }
 
 class _OverviewTabViewState extends State<OverviewTabView> {
+
+  @override
+  void initState() {
+
+    super.initState();
+
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -201,7 +226,7 @@ class _OverviewTabViewState extends State<OverviewTabView> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                MyRewardsList(),
+                RewardsList(),
 
                 const Text(
                   "URL",
@@ -237,7 +262,7 @@ class CheckPointTabView extends StatefulWidget {
 class _CheckPointTabViewState extends State<CheckPointTabView> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<SpotInformationModel>(builder: (context, model, child) {
+    return Consumer<ProjectInformationPageModel>(builder: (context, model, child) {
 
         return Container(
           child: ListView.separated(
@@ -261,7 +286,12 @@ class _CheckPointTabViewState extends State<CheckPointTabView> {
                         ),
                         child:ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.asset("images/tile-test.png"),
+                          child: model.imageUrlList[index] != ''
+                            ? FittedBox(
+                              fit: BoxFit.fitHeight,
+                              child: Image(image: CachedNetworkImageProvider(model.imageUrlList[index]))
+                            )
+                            : const Center(child:CircularProgressIndicator()),
                         ),
                         height: 80,
                         width: 80,
@@ -273,8 +303,8 @@ class _CheckPointTabViewState extends State<CheckPointTabView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                model.spotsList[index]["name"] != null
-                                  ? model.spotsList[index]["name"]
+                                model.spotsList[index]["title"] != null
+                                  ? model.spotsList[index]["title"]
                                   : "...",
                                 style: TextStyle(
                                   fontSize: 15,
@@ -304,10 +334,11 @@ class _CheckPointTabViewState extends State<CheckPointTabView> {
                   ),
                 ),
                 onTap: () {
-
+                  Provider.of<SpotInformationModel>(context, listen: false).updateSpotInfo(model.spotsList[index]);
+                  Provider.of<SpotInformationModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
                   Navigator.push(
                     context, MaterialPageRoute(
-                      builder: (context) => SpotInformationPage(spotInfo:model.spotsList[index], reviewsList:model.reviewsList[index] ),
+                      builder: (context) => SpotInformationPage(),
                       //以下を追加
                       fullscreenDialog: true,
                     )
@@ -338,8 +369,187 @@ class MapTabView extends StatefulWidget {
 }
 
 class _MapTabViewState extends State<MapTabView> {
+  List<Marker> markers = [];
+  LatLngBounds bounds = LatLngBounds(LatLng(0,0), LatLng(0,0));
+  bool _isFocusedMarker = true;
+
+  Marker createMarker(LatLng position, Map spotInfo, String imageUrl) {
+    Marker marker = Marker(
+      point: position,
+      width: 120,
+      height: 120,
+      child: GestureDetector(
+        child: const Icon(Icons.location_pin, color: Colors.red, size: 40),
+        onTap: () {
+          Provider.of<SpotInformationModel>(context, listen: false).updateSpotInfo(spotInfo);
+          Provider.of<SpotInformationModel>(context, listen: false).updateImageUrl(imageUrl);
+          Navigator.push(
+            context, MaterialPageRoute(
+              builder: (context) => SpotInformationPage(),
+              //以下を追加
+              fullscreenDialog: true,
+            )
+          );
+        },
+      ),
+      rotate: true,
+    );
+    return marker;
+  }
+
+  @override
+  void initState() {
+
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MapModel>(context, listen: false).updateIsMapDisplayed(true);
+      Provider.of<MapModel>(context, listen: false).updateZoomLevel(16.0);
+      Provider.of<MapModel>(context, listen: false).updateLocationTracking(false);
+
+      List spotInfo = Provider.of<ProjectInformationPageModel>(context, listen: false).spotsList;
+      List spotImages = Provider.of<ProjectInformationPageModel>(context, listen: false).imageUrlList;
+
+      for (var i = 0; i < spotInfo.length; i++) {
+        markers.add(
+          createMarker(LatLng(spotInfo[i]['location']['y'], spotInfo[i]['location']['x']), spotInfo[i], spotImages[i])
+        );
+      }
+
+
+      setState(() {
+
+      });
+    });
+
+
+  }
+  late MapModel _mapModel;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _mapModel = Provider.of<MapModel>(context, listen: false);
+    // print('fa');
+  }
+  @override
+  void dispose() {
+
+    super.dispose();
+    _mapModel.updateIsMapDisplayed(false);
+  }
   @override
   Widget build(BuildContext context) {
-    return Container(child:Text("ここにマップをのせる"), color: Colors.red,);
+    return Consumer<MapModel>(
+      builder: (context, model, child) {
+        return Stack(
+          children: [
+            FlutterMap(
+              mapController: model.mapController,
+              options: MapOptions(
+                // 地図の中心座標
+                initialZoom: 16,
+                maxZoom: 18,
+
+                initialCameraFit: CameraFit.bounds(
+                  bounds: Provider.of<ProjectInformationPageModel>(context, listen: false).bounds,
+                ),
+                onPositionChanged: (MapPosition position, bool hasGesture) {
+                  if (hasGesture) {
+                    model.locationTracking = false;
+                    _isFocusedMarker = false;
+                    setState(() {
+
+
+                    });
+                  }
+
+                }
+              ),
+              children: [
+                // 地図表示のタイルレイヤー
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.app',
+                  // additionalOptions: {
+                  //   'accessToken': 'tijooIzVTsTVIMoj55aYR3BeBRmhmGyYJpPUrAzcR6VkSiB4Uu0e387O9AM1xtfy',
+                  //   'lang': 'ja'
+                  // },
+                ),
+
+                CircleLayer(circles: model.circleMarkers),
+                MarkerLayer(markers: markers)
+              ],
+            ),
+            Positioned(
+              right: 10,
+              bottom: 10,
+              child: Column(
+                children: [
+                  Visibility(
+                    visible: !model.locationTracking,
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: ElevatedButton(
+                        child: const Icon(
+                          Icons.my_location,
+                          color: Colors.white,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          shape: const CircleBorder(
+                          ),
+                          elevation: 16,
+                        ),
+                        onPressed: () {
+                          model.locationTracking = true;
+                          _isFocusedMarker = false;
+                          model.mapController.move(LatLng(model.myLocation[0], model.myLocation[1]), model.zoomLevel);
+                          setState(() {
+
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  Visibility(
+                    visible: !_isFocusedMarker && !model.locationTracking,
+                    child: SizedBox(height:10)
+                  ),
+                  Visibility(
+                    visible: !_isFocusedMarker,
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: ElevatedButton(
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          shape: const CircleBorder(
+                          ),
+                          elevation: 16,
+                        ),
+                        onPressed: () {
+                          _isFocusedMarker = true;
+                          model.locationTracking = false;
+                          model.mapController.fitCamera(
+                            CameraFit.bounds(
+                              bounds: bounds,
+                            )
+                          );
+                          setState(() {
+
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
+    );
   }
 }

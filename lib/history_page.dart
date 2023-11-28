@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'spot_information_page.dart';
+import 'package:stamprally_v2/main.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:stamprally_v2/spot_information_model.dart';
+import 'package:provider/provider.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -9,6 +13,22 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
+  List _userHistory = [];
+  List _images = [];
+  void initState() {
+    super.initState();
+    Future(() async {
+      _userHistory = await getData('/get/user/history', {'user_id':userId});
+
+      for (var i = 0; i < _userHistory.length; i++) {
+        _images.add(await getImageUrl(_userHistory[i]['image']));
+      }
+      setState(() {
+
+      });
+    });
+
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,8 +43,8 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: Container(
       child: ListView.separated(
-        itemCount: 5,
-        itemBuilder: (context, int position) {
+        itemCount: _userHistory.length,
+        itemBuilder: (context, int index) {
           return InkWell(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal:15, vertical:7),
@@ -43,7 +63,12 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     child:ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.asset("images/tile-test.png"),
+                      child: _images[index] != ''
+                            ? FittedBox(
+                              fit: BoxFit.fitHeight,
+                              child: Image(image: CachedNetworkImageProvider(_images[index]))
+                            )
+                            : const Center(child:CircularProgressIndicator()),
                     ),
                     height: 80,
                     width: 80,
@@ -55,7 +80,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "ここにタイトルが入る",
+                            _userHistory[index]['title'] != null ? _userHistory[index]['title'] : '...',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold
@@ -65,7 +90,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           Padding(
                             padding: const EdgeInsets.all(2.0),
                             child: Text(
-                              "ここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れるここに説明を入れる",
+                              _userHistory[index]['explanation'] != null ? _userHistory[index]['explanation'] : '...',
                               style: TextStyle(
                                 fontSize: 13,
                               ),
@@ -82,13 +107,15 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ),
             onTap: () {
-              // Navigator.push(
-              //   context, MaterialPageRoute(
-              //     builder: (context) => SpotInformationPage(id:"KIBf5dQHAxQELOSbU8IR"),
-              //     //以下を追加
-              //     fullscreenDialog: true,
-              //   )
-              // );
+              Provider.of<SpotInformationModel>(context, listen: false).updateSpotInfo(_userHistory[index]);
+              Provider.of<SpotInformationModel>(context, listen: false).updateImageUrl(_images[index]);
+              Navigator.push(
+                context, MaterialPageRoute(
+                  builder: (context) => SpotInformationPage(),
+                  //以下を追加
+                  fullscreenDialog: true,
+                )
+              );
             },
           );
         },

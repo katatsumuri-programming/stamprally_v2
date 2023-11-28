@@ -2,14 +2,29 @@ import 'package:flutter/material.dart';
 
 class SpotInformationModel extends ChangeNotifier {
 
-  List spotsList = [];
+  Map spotInfo = {};
   List reviewsList = [];
-  void updateSpotsList(data) {
-    spotsList = data;
+  String imageUrl = "";
+  bool isChecked = false;
+  bool isNear = false;
+  void updateSpotInfo(data) {
+    spotInfo = data;
+    notifyListeners();
+  }
+  void updateImageUrl(data) {
+    imageUrl = data;
     notifyListeners();
   }
   void updateReviewsList(data) {
     reviewsList = data;
+    notifyListeners();
+  }
+  void updateIsChecked(data) {
+    isChecked = data;
+    notifyListeners();
+  }
+  void updateIsNear(data) {
+    isNear = data;
     notifyListeners();
   }
 

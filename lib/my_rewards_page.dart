@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:stamprally_v2/rewards_model.dart';
+import 'package:stamprally_v2/rewards_list_model.dart';
+import 'package:stamprally_v2/unused_reward_model.dart';
+import 'package:stamprally_v2/unused_reward_page.dart';
 import 'reward_page.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:stamprally_v2/reward_model.dart';
+import 'package:stamprally_v2/main.dart';
 class MyRewardsPage extends StatefulWidget {
   const MyRewardsPage({super.key});
 
@@ -9,57 +14,102 @@ class MyRewardsPage extends StatefulWidget {
   State<MyRewardsPage> createState() => _MyRewardsPageState();
 }
 
-class _MyRewardsPageState extends State<MyRewardsPage> {
+class _MyRewardsPageState extends State<MyRewardsPage> with SingleTickerProviderStateMixin{
+  TabController? _tabController;
+
+
+  List _rewardsListAvailable = [];
+  List _availableImages = [];
+  List _rewardsListUnused = [];
+  List _unusedImages = [];
+  void initState() {
+    super.initState();
+    _tabController = TabController(vsync: this, length: 2);
+    _tabController!.addListener(() {
+      Provider.of<RewardsListModel>(context, listen: false).changedPage(_tabController!.index);
+      // if (_tabController!.index == 0) {
+      //   Provider.of<RewardsListModel>(context, listen: false).updateIsUnusedRewardsPage(true);
+      //   // Provider.of<RewardsListModel>(context, listen: false).updateRewardList(_rewardsListUnused);
+      //   // Provider.of<RewardsListModel>(context, listen: false).updateImageUrlList(_unusedImages);
+      // } else if (_tabController!.index == 1) {
+      //   Provider.of<RewardsListModel>(context, listen: false).updateIsUnusedRewardsPage(false);
+      //   // Provider.of<RewardsListModel>(context, listen: false).updateRewardList(_rewardsListAvailable);
+      //   // Provider.of<RewardsListModel>(context, listen: false).updateImageUrlList(_availableImages);
+      // }
+      setState(() {});
+    });
+    Future(() async {
+      _rewardsListAvailable = await getData('/get/user/available_rewards_list', {'user_id':userId});
+      _rewardsListUnused = await getData('/get/user/unused_rewards_list', {'user_id':userId});
+      for (var i = 0; i < _rewardsListAvailable.length; i++) {
+        _availableImages.add(await getImageUrl(_rewardsListAvailable[i]['image']));
+      }
+      for (var i = 0; i < _rewardsListUnused.length; i++) {
+        _unusedImages.add(await getImageUrl(_rewardsListUnused[i]['image']));
+      }
+
+      Provider.of<RewardsListModel>(context, listen: false).updateRewardsListUnused(_rewardsListUnused);
+      Provider.of<RewardsListModel>(context, listen: false).updateRewardsListAvailable(_rewardsListAvailable);
+      Provider.of<RewardsListModel>(context, listen: false).updateImageUnusedRewardsUrlList(_unusedImages);
+      Provider.of<RewardsListModel>(context, listen: false).updateImageAvailableRewardsUrlList(_availableImages);
+      Provider.of<RewardsListModel>(context, listen: false).changedPage(0);
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          elevation: 1,
-          backgroundColor: Colors.white,
-          centerTitle: true,
-          title: Image.asset(
-            'images/appBarImage.png',
-            height: 38,
-          ),
-          bottom: TabBar(
-            isScrollable: true,
-            tabs: <Widget> [
-              Tab(text: "未使用特典",),
-              Tab(text: "受け取り可能特典",),
-              Tab(text: "使用済み特典",),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 1,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        title: Image.asset(
+          'images/appBarImage.png',
+          height: 38,
         ),
-        body: TabBarView(
-          physics: NeverScrollableScrollPhysics(),
-          children: [
-            MyRewardsList(),
-            MyRewardsList(),
-            MyRewardsList(),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: <Widget> [
+            Tab(text: "未使用特典",),
+            Tab(text: "受け取り可能特典",)
           ],
         ),
+      ),
+      body: TabBarView(
+        physics: NeverScrollableScrollPhysics(),
+        controller: _tabController,
+        children: [
+          RewardsList(),
+          RewardsList()
+        ],
       ),
     );
   }
 }
 
 
-class MyRewardsList extends StatefulWidget {
+class RewardsList extends StatefulWidget {
 
-  const MyRewardsList({super.key});
+  const RewardsList({super.key});
 
   @override
-  State<MyRewardsList> createState() => _MyRewardsListState();
+  State<RewardsList> createState() => _RewardsListState();
 }
 
-class _MyRewardsListState extends State<MyRewardsList> {
+class _RewardsListState extends State<RewardsList> {
 
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<RewardsModel>(builder: (context, model, child) {
+    return Consumer<RewardsListModel>(builder: (context, model, child) {
 
       return Container(
         padding: const EdgeInsets.all(8.0),
@@ -86,7 +136,12 @@ class _MyRewardsListState extends State<MyRewardsList> {
                         ),
                         child:ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.asset("images/tile-test.png"),
+                          child: model.imageUrlList.length > 0
+                            ? FittedBox(
+                              fit: BoxFit.fitHeight,
+                              child: Image(image: CachedNetworkImageProvider(model.imageUrlList[index]))
+                            )
+                            : const Center(child:CircularProgressIndicator())
                         ),
                         height: 80,
                         width: 80,
@@ -109,7 +164,8 @@ class _MyRewardsListState extends State<MyRewardsList> {
                               const SizedBox(height: 1,),
                               Text(
                                 model.rewardsList[index]["conditions"] != null
-                                  ? "応募条件: " + model.rewardsList[index]["conditions"]
+                                  ? model.rewardsList[index]["application_number"] == null ? "応募条件: " + model.rewardsList[index]["conditions"].toString()
+                                  : "期限: " + model.rewardsList[index]["conditions"].toString()
                                   : "...",
                                 style: TextStyle(
                                   fontSize: 12,
@@ -137,14 +193,50 @@ class _MyRewardsListState extends State<MyRewardsList> {
                     ]
                   ),
               ),
-              onTap: () {
-                Navigator.push(
-                  context, MaterialPageRoute(
-                    builder: (context) => RewardPage(rewardData: model.rewardsList[index]),
-                    //以下を追加
-                    fullscreenDialog: true,
-                  )
+              onTap: () async {
+                if (model.rewardsList[index]['application_number'] == null) {
+                  Provider.of<RewardModel>(context, listen: false).updateRewardInfo(model.rewardsList[index]);
+                  Provider.of<RewardModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
+                  await Navigator.push(
+                    context, MaterialPageRoute(
+                      builder: (context) => RewardPage(),
+                      //以下を追加
+                      fullscreenDialog: true,
+                    )
+                  );
+                } else {
+                  Provider.of<UnusedRewardModel>(context, listen: false).updateUnusedRewardInfo(model.rewardsList[index]);
+                  Provider.of<UnusedRewardModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
+                  await Navigator.push(
+                    context, MaterialPageRoute(
+                      builder: (context) => UnusedRewardPage(),
+                      //以下を追加
+                      fullscreenDialog: true,
+                    )
+                  );
+                }
+
+                List availableImages = [];
+                List unusedImages = [];
+                List rewardsListAvailable = await getData('/get/user/available_rewards_list', {'user_id':userId});
+                List rewardsListUnused = await getData('/get/user/unused_rewards_list', {'user_id':userId});
+                for (var i = 0; i < rewardsListAvailable.length; i++) {
+                  availableImages.add(await getImageUrl(rewardsListAvailable[i]['image']));
+                }
+                for (var i = 0; i < rewardsListUnused.length; i++) {
+                  unusedImages.add(await getImageUrl(rewardsListUnused[i]['image']));
+                }
+
+                Provider.of<RewardsListModel>(context, listen: false).updateRewardsListUnused(rewardsListUnused);
+                Provider.of<RewardsListModel>(context, listen: false).updateRewardsListAvailable(rewardsListAvailable);
+                Provider.of<RewardsListModel>(context, listen: false).updateImageUnusedRewardsUrlList(unusedImages);
+                Provider.of<RewardsListModel>(context, listen: false).updateImageAvailableRewardsUrlList(availableImages);
+                Provider.of<RewardsListModel>(context, listen: false).changedPage(
+                  Provider.of<RewardsListModel>(context, listen: false).pageNumber
                 );
+                setState(() {
+
+                });
               },
             );
           },
@@ -163,3 +255,5 @@ class _MyRewardsListState extends State<MyRewardsList> {
     });
   }
 }
+
+
