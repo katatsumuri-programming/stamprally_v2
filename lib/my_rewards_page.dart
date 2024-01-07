@@ -53,6 +53,7 @@ class _MyRewardsPageState extends State<MyRewardsPage> with SingleTickerProvider
       Provider.of<RewardsListModel>(context, listen: false).updateImageUnusedRewardsUrlList(_unusedImages);
       Provider.of<RewardsListModel>(context, listen: false).updateImageAvailableRewardsUrlList(_availableImages);
       Provider.of<RewardsListModel>(context, listen: false).changedPage(0);
+      Provider.of<RewardsListModel>(context, listen: false).updateFromMyRewardsPage(true);
       setState(() {});
     });
   }
@@ -118,9 +119,10 @@ class _RewardsListState extends State<RewardsList> {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: model.rewardsList.length,
           itemBuilder: (context, int index) {
-            return InkWell(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical:6),
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical:6),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
                 child: Row(
                     children: [
                       Container(
@@ -164,7 +166,7 @@ class _RewardsListState extends State<RewardsList> {
                               const SizedBox(height: 1,),
                               Text(
                                 model.rewardsList[index]["conditions"] != null
-                                  ? model.rewardsList[index]["application_number"] == null ? "応募条件: " + model.rewardsList[index]["conditions"].toString()
+                                  ? model.rewardsList[index]["application_number"] == null ? "応募条件: スタンプ" + model.rewardsList[index]["conditions"].toString() + '個以上'
                                   : "期限: " + model.rewardsList[index]["conditions"].toString()
                                   : "...",
                                 style: TextStyle(
@@ -192,52 +194,53 @@ class _RewardsListState extends State<RewardsList> {
                       )
                     ]
                   ),
+                onTap: () async {
+                  if (model.rewardsList[index]['application_number'] == null) { //利用可能
+                    Provider.of<RewardModel>(context, listen: false).updateRewardInfo(model.rewardsList[index]);
+                    Provider.of<RewardModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
+                    await Navigator.push(
+                      context, MaterialPageRoute(
+                        builder: (context) => RewardPage(),
+                        //以下を追加
+                        fullscreenDialog: true,
+                      )
+                    );
+                  } else { //未使用
+                    Provider.of<UnusedRewardModel>(context, listen: false).updateUnusedRewardInfo(model.rewardsList[index]);
+                    Provider.of<UnusedRewardModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
+                    await Navigator.push(
+                      context, MaterialPageRoute(
+                        builder: (context) => UnusedRewardPage(),
+                        //以下を追加
+                        fullscreenDialog: true,
+                      )
+                    );
+                  }
+                  if (model.fromMyRewardsPage) {
+                    List availableImages = [];
+                    List unusedImages = [];
+                    List rewardsListAvailable = await getData('/get/user/available_rewards_list', {'user_id':userId});
+                    List rewardsListUnused = await getData('/get/user/unused_rewards_list', {'user_id':userId});
+                    for (var i = 0; i < rewardsListAvailable.length; i++) {
+                      availableImages.add(await getImageUrl(rewardsListAvailable[i]['image']));
+                    }
+                    for (var i = 0; i < rewardsListUnused.length; i++) {
+                      unusedImages.add(await getImageUrl(rewardsListUnused[i]['image']));
+                    }
+
+                    model.updateRewardsListUnused(rewardsListUnused);
+                    model.updateRewardsListAvailable(rewardsListAvailable);
+                    model.updateImageUnusedRewardsUrlList(unusedImages);
+                    model.updateImageAvailableRewardsUrlList(availableImages);
+                    model.changedPage(
+                      model.pageNumber
+                    );
+                  }
+                  setState(() {
+
+                  });
+                },
               ),
-              onTap: () async {
-                if (model.rewardsList[index]['application_number'] == null) {
-                  Provider.of<RewardModel>(context, listen: false).updateRewardInfo(model.rewardsList[index]);
-                  Provider.of<RewardModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
-                  await Navigator.push(
-                    context, MaterialPageRoute(
-                      builder: (context) => RewardPage(),
-                      //以下を追加
-                      fullscreenDialog: true,
-                    )
-                  );
-                } else {
-                  Provider.of<UnusedRewardModel>(context, listen: false).updateUnusedRewardInfo(model.rewardsList[index]);
-                  Provider.of<UnusedRewardModel>(context, listen: false).updateImageUrl(model.imageUrlList[index]);
-                  await Navigator.push(
-                    context, MaterialPageRoute(
-                      builder: (context) => UnusedRewardPage(),
-                      //以下を追加
-                      fullscreenDialog: true,
-                    )
-                  );
-                }
-
-                List availableImages = [];
-                List unusedImages = [];
-                List rewardsListAvailable = await getData('/get/user/available_rewards_list', {'user_id':userId});
-                List rewardsListUnused = await getData('/get/user/unused_rewards_list', {'user_id':userId});
-                for (var i = 0; i < rewardsListAvailable.length; i++) {
-                  availableImages.add(await getImageUrl(rewardsListAvailable[i]['image']));
-                }
-                for (var i = 0; i < rewardsListUnused.length; i++) {
-                  unusedImages.add(await getImageUrl(rewardsListUnused[i]['image']));
-                }
-
-                Provider.of<RewardsListModel>(context, listen: false).updateRewardsListUnused(rewardsListUnused);
-                Provider.of<RewardsListModel>(context, listen: false).updateRewardsListAvailable(rewardsListAvailable);
-                Provider.of<RewardsListModel>(context, listen: false).updateImageUnusedRewardsUrlList(unusedImages);
-                Provider.of<RewardsListModel>(context, listen: false).updateImageAvailableRewardsUrlList(availableImages);
-                Provider.of<RewardsListModel>(context, listen: false).changedPage(
-                  Provider.of<RewardsListModel>(context, listen: false).pageNumber
-                );
-                setState(() {
-
-                });
-              },
             );
           },
           separatorBuilder: (context, index) {

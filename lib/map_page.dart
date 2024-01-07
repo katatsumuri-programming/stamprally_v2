@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:stamprally_v2/main.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:stamprally_v2/map_page_model.dart';
@@ -58,6 +59,7 @@ class _MapPageState extends State<MapPage> {
                 height: 38,
               ),
               bottom: TabBar(
+                tabAlignment: TabAlignment.center,
                 isScrollable: true,
                 tabs: <Widget> [
                   Tab(text: "すべて",),
@@ -155,7 +157,8 @@ class _MapTopPageState extends State<MapTopPage> {
           'latitude_min':visibleBounds.southWest.latitude,
           'longitude_max':visibleBounds.northEast.longitude,
           'latitude_max':visibleBounds.northEast.latitude
-        }
+        },
+        false
       );
 
 
@@ -220,6 +223,7 @@ class _MapTopPageState extends State<MapTopPage> {
               children: [
                 // 地図表示のタイルレイヤー
                 TileLayer(
+                  tileProvider: CancellableNetworkTileProvider(),
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.app',
                 ),
@@ -258,7 +262,8 @@ class _MapTopPageState extends State<MapTopPage> {
                             'longitude_max':visibleBounds.northEast.longitude,
                             'latitude_max':visibleBounds.northEast.latitude,
                             'text':searchText
-                          }
+                          },
+                          false
                         );
                       } else {
                         spotsList = await getData(
@@ -268,7 +273,8 @@ class _MapTopPageState extends State<MapTopPage> {
                             'latitude_min':visibleBounds.southWest.latitude,
                             'longitude_max':visibleBounds.northEast.longitude,
                             'latitude_max':visibleBounds.northEast.latitude
-                          }
+                          },
+                          false
                         );
                       }
                       print(spotsList.length);
@@ -301,10 +307,11 @@ class _MapTopPageState extends State<MapTopPage> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal:5),
                             child: InkWell(
+                              borderRadius: BorderRadius.circular(999),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(999999),
-                                  border: Border.all(color: genres[i]['isCheck'] ? Colors.blue : Colors.black54),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black54),
                                   color: genres[i]['isCheck'] ? Colors.lightBlue[50] : Colors.white,
                                 ),
                                 child: Padding(
@@ -314,7 +321,7 @@ class _MapTopPageState extends State<MapTopPage> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: genres[i]['isCheck'] ? Colors.blue : Colors.black87,
+                                      color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black87,
                                     ),
                                   ),
                                 ),
@@ -343,7 +350,8 @@ class _MapTopPageState extends State<MapTopPage> {
                                       'longitude_max':visibleBounds.northEast.longitude,
                                       'latitude_max':visibleBounds.northEast.latitude,
                                       'tag':tagsString
-                                    }
+                                    },
+                                    false
                                   );
                                 } else {
                                   LatLngBounds visibleBounds = model.mapController.camera.visibleBounds;
@@ -354,7 +362,8 @@ class _MapTopPageState extends State<MapTopPage> {
                                       'latitude_min':visibleBounds.southWest.latitude,
                                       'longitude_max':visibleBounds.northEast.longitude,
                                       'latitude_max':visibleBounds.northEast.latitude
-                                    }
+                                    },
+                                    false
                                   );
                                 }
                                 markers = [];
@@ -386,7 +395,7 @@ class _MapTopPageState extends State<MapTopPage> {
                 child: SizedBox(
                   width: 60,
                   height: 60,
-                  child: ElevatedButton(
+                  child:IconButton(
                     onPressed: () {
                       model.locationTracking = true;
                       model.mapController.move(LatLng(model.myLocation[0], model.myLocation[1]), model.zoomLevel);
@@ -398,8 +407,9 @@ class _MapTopPageState extends State<MapTopPage> {
                       shape: const CircleBorder(
                       ),
                       elevation: 16,
+                      backgroundColor: Theme.of(context).primaryColor
                     ),
-                    child: const Icon(
+                    icon: const Icon(
                       Icons.my_location,
                       color: Colors.white,
                     ),
@@ -414,64 +424,80 @@ class _MapTopPageState extends State<MapTopPage> {
                 alignment: Alignment.bottomCenter,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.search),
-                    label: const Text('この範囲で検索'),
-                    style: ElevatedButton.styleFrom(
-                      shape: const StadiumBorder(),
-                      backgroundColor: Colors.white,
+                  child: SizedBox(
+                    height: 35,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.search),
+                      label: const Text('この範囲で検索'),
+                      style: ElevatedButton.styleFrom(
+                        shape: const StadiumBorder(),
+                        backgroundColor: Colors.white,
+                      ),
+                      onPressed: () async  {
+
+                        LatLngBounds visibleBounds = model.mapController.camera.visibleBounds;
+
+                        print(visibleBounds.northEast);
+                        print(visibleBounds.southWest);
+                        List tempSpotsList = [];
+                        if (searchText.isNotEmpty) {
+                          tempSpotsList = await getData(
+                            '/get/map/range/search',
+                            {
+                              'longitude_min':visibleBounds.southWest.longitude,
+                              'latitude_min':visibleBounds.southWest.latitude,
+                              'longitude_max':visibleBounds.northEast.longitude,
+                              'latitude_max':visibleBounds.northEast.latitude,
+                              'text':searchText
+                            },
+                            false
+                          );
+                        } else if (tagsString.isNotEmpty) {
+                          tempSpotsList = await getData(
+                            '/get/map/range/tag',
+                            {
+                              'longitude_min':visibleBounds.southWest.longitude,
+                              'latitude_min':visibleBounds.southWest.latitude,
+                              'longitude_max':visibleBounds.northEast.longitude,
+                              'latitude_max':visibleBounds.northEast.latitude,
+                              'tag':tagsString
+                            },
+                            false
+                          );
+                        } else {
+                          tempSpotsList = await getData(
+                            '/get/map/range',
+                            {
+                              'longitude_min':visibleBounds.southWest.longitude,
+                              'latitude_min':visibleBounds.southWest.latitude,
+                              'longitude_max':visibleBounds.northEast.longitude,
+                              'latitude_max':visibleBounds.northEast.latitude
+                            },
+                            false
+                          );
+                        }
+                        images = [];
+                        List spotsListIds = spotsList.map((item) => item['id']).toList();
+                        List tempSpotsListIds = tempSpotsList.map((item) => item['id']).toList();
+                        print(tempSpotsListIds);
+                        for (var i = 0; i < tempSpotsListIds.length; i++) {
+                          if(!spotsListIds.contains(tempSpotsListIds[i])) {
+
+                            spotsList.add(tempSpotsList[i]);
+                          }
+                        }
+                        markers = [];
+                        print(spotsList.length);
+                        for (var i = 0; i < spotsList.length; i++) {
+                          images.add(await getImageUrl(spotsList[i]['image']));
+                        }
+                        for (var i = 0; i < spotsList.length; i++) {
+                          markers.add(createMarker(LatLng(spotsList[i]['location']['y'], spotsList[i]['location']['x']), spotsList[i], images[i]));
+                        }
+                        isRangeChange = false;
+                        setState(() {});
+                      }
                     ),
-                    onPressed: () async  {
-                      LatLngBounds visibleBounds = model.mapController.camera.visibleBounds;
-
-                      print(visibleBounds.northEast);
-                      print(visibleBounds.southWest);
-
-                      if (searchText.isNotEmpty) {
-                        spotsList = await getData(
-                          '/get/map/range/search',
-                          {
-                            'longitude_min':visibleBounds.southWest.longitude,
-                            'latitude_min':visibleBounds.southWest.latitude,
-                            'longitude_max':visibleBounds.northEast.longitude,
-                            'latitude_max':visibleBounds.northEast.latitude,
-                            'text':searchText
-                          }
-                        );
-                      } else if (tagsString.isNotEmpty) {
-                        spotsList = await getData(
-                          '/get/map/range/tag',
-                          {
-                            'longitude_min':visibleBounds.southWest.longitude,
-                            'latitude_min':visibleBounds.southWest.latitude,
-                            'longitude_max':visibleBounds.northEast.longitude,
-                            'latitude_max':visibleBounds.northEast.latitude,
-                            'tag':tagsString
-                          }
-                        );
-                      } else {
-                        spotsList = await getData(
-                          '/get/map/range',
-                          {
-                            'longitude_min':visibleBounds.southWest.longitude,
-                            'latitude_min':visibleBounds.southWest.latitude,
-                            'longitude_max':visibleBounds.northEast.longitude,
-                            'latitude_max':visibleBounds.northEast.latitude
-                          }
-                        );
-                      }
-
-
-                      print(spotsList.length);
-                      for (var i = 0; i < spotsList.length; i++) {
-                        images.add(await getImageUrl(spotsList[i]['image']));
-                      }
-                      for (var i = 0; i < spotsList.length; i++) {
-                        markers.add(createMarker(LatLng(spotsList[i]['location']['y'], spotsList[i]['location']['x']), spotsList[i], images[i]));
-                      }
-                      isRangeChange = false;
-                      setState(() {});
-                    }
                   ),
                 ),
               )
@@ -542,6 +568,8 @@ class _MapCardPageState extends State<MapCardPage> {
         genres.add({"name":genres_data[i]['name'], 'isCheck':false});
       }
       print(spotsList.length);
+      markers = [];
+      images = [];
       for (var i = 0; i < spotsList.length; i++) {
         images.add(await getImageUrl(spotsList[i]['image']));
       }
@@ -593,6 +621,7 @@ class _MapCardPageState extends State<MapCardPage> {
               children: [
                 // 地図表示のタイルレイヤー
                 TileLayer(
+                  tileProvider: CancellableNetworkTileProvider(),
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.app',
                   // additionalOptions: {
@@ -622,6 +651,7 @@ class _MapCardPageState extends State<MapCardPage> {
                       filled: true,
                     ),
                     onSubmitted: (text) async {
+                      spotsList = [];
                       if (text.length > 0) {
                         spotsList = await getData('/get/user/map/search', {'user_id':userId, 'text':text});
                       } else {
@@ -655,10 +685,11 @@ class _MapCardPageState extends State<MapCardPage> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal:5),
                             child: InkWell(
+                              borderRadius: BorderRadius.circular(999),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(999999),
-                                  border: Border.all(color: genres[i]['isCheck'] ? Colors.blue : Colors.black54),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black54),
                                   color: genres[i]['isCheck'] ? Colors.lightBlue[50] : Colors.white,
                                 ),
                                 child: Padding(
@@ -668,12 +699,13 @@ class _MapCardPageState extends State<MapCardPage> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: genres[i]['isCheck'] ? Colors.blue : Colors.black87,
+                                      color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black87,
                                     ),
                                   ),
                                 ),
                               ),
                               onTap: () async {
+                                spotsList = [];
                                 if (!genres[i]["isCheck"]) {
                                   genres[i]["isCheck"] = true;
 
@@ -718,8 +750,8 @@ class _MapCardPageState extends State<MapCardPage> {
                 child: SizedBox(
                   width: 60,
                   height: 60,
-                  child: ElevatedButton(
-                    child: const Icon(
+                  child: IconButton(
+                    icon: const Icon(
                       Icons.my_location,
                       color: Colors.white,
                     ),
@@ -727,6 +759,7 @@ class _MapCardPageState extends State<MapCardPage> {
                       shape: const CircleBorder(
                       ),
                       elevation: 16,
+                      backgroundColor: Theme.of(context).primaryColor
                     ),
                     onPressed: () {
                       model.locationTracking = true;

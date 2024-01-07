@@ -1,0 +1,78 @@
+<head>
+  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+  <section class="list">
+    <div class="spots_list_block">
+      <select id="spots_list" name="spots_list" size="5">
+      </select>
+      <button id="add_spot">スポットを追加</button>
+    </div>
+    <div class="stamprallies_list_block">
+      <select id="stamprallies_list" name="stamprallies_list" size="5"></select>
+      <button id="add_stamprally">スタンプラリーを追加</button>
+    </div>
+  </section>
+  <section class="stamprally_info">
+    <div>
+      <h2>基本情報</h2>
+      <div>
+        <img id="stamprally_img_preview"><br>
+        <input type="file" id="stamprally_img">
+      </div>
+      <div><input type="text" id="stamprally_title" placeholder="タイトル"></div>
+      <div><input type="text" id="stamprally_period" placeholder="開催期間"></div>
+      <div><input type="text" id="stamprally_venue" placeholder="開催場所"></div>
+      <div><input type="text" id="stamprally_url" placeholder='WEBサイト'></div>
+      <div><textarea id="stamprally_explanation" placeholder="説明"></textarea></div>
+    </div>
+    <div>
+      <h2>賞品</h2>
+      <div>
+        <img id="reward_img_preview"><br>
+        <input type="file" id="reward_img">
+      </div>
+      <div>
+        <input type="text" id="reward_title" placeholder="タイトル">
+      </div>
+      <div>
+        <input type="number" min="1" id="reward_conditions" placeholder="必要なスタンプ数">
+      </div>
+      <div>
+        <textarea id="reward_explanation" placeholder="説明"></textarea>
+      </div>
+    </div>
+    <div>
+      <h2>スポット</h2>
+      <div>
+      <select id="included_spots_list" name="included_spots_list" size="5" multiple></select>
+    </div>
+    </div>
+    <button id="save_stamprally_info">保存</button>
+    <button id="add_stamprally_info">追加</button>
+  </section>
+  <section class="spot_info">
+    <h2>基本</h2>
+    <div>
+      <img id="spot_img_preview"><br>
+      <input type="file" id="spot_img">
+    </div>
+    <div><input type="text" id="spot_title" placeholder="タイトル"></div>
+    <div><input type="text" id="spot_address" placeholder="住所"></div>
+    <div><input type="text" id="spot_website" placeholder="WEBサイト"></div>
+    <div><input type="text" id="spot_openHours" placeholder='営業時間'></div>
+    <div><input type="text" id="spot_admissionFee" placeholder='入場料'></div>
+    <div><input type="text" id="spot_tags" placeholder='タグ カンマ区切り'></div>
+    <div>
+      <input type="number" id="spot_location_lat" placeholder='場所 緯度 -90~90' min="-90" max="90">
+      <input type="number" id="spot_location_lon" placeholder='場所 経度 -180~180' min="-180" max="180">
+    </div>
+    <div><textarea id="spot_explanation" placeholder="説明"></textarea></div>
+    <button id="save_spot_info">保存</button>
+    <button id="add_spot_info">追加</button>
+  </section>
+  <script src="script.js"></script>
+</body>

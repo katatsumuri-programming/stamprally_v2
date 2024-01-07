@@ -1,0 +1,91 @@
+body {
+    margin: 0;
+}
+h2 {
+    margin: 0;
+}
+h3 {
+    margin: 0;
+}
+p {
+    margin: 0;
+}
+
+input, textarea {
+    font-size: 19px;
+    margin: 10px 0;
+}
+#stamprally_img_preview, #reward_img_preview, #spot_img_preview {
+    height: 25vh;
+}
+input[type='text'], input[type='number'], textarea {
+    padding: 15px;
+    width: 80%;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    outline: none;
+}
+textarea {
+    font-size: 19px;
+    height: 200px;
+}
+#spots_list, #stamprallies_list {
+
+}
+#spots_list, #stamprallies_list, #included_spots_list {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    width: 100%;
+    height: 300px;
+    outline: none;
+}
+#included_spots_list {
+    margin-left: 0;
+    width: 80%;
+}
+option {
+    padding: 10px;
+}
+button {
+    border: none;
+    border-radius: 100vh;
+    background-color: deepskyblue;
+    color: white;
+    padding: 12px;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-weight: bold;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    margin: 10px;
+}
+
+.spots_list_block, .stamprallies_list_block {
+    width: 40%;
+    margin-left: 4%;
+    margin-right: 5%;
+    margin-top: 50px;
+}
+.list {
+    display: flex;
+}
+
+.stamprally_info {
+    display: none;
+}
+
+.stamprally_info, .spot_info {
+    margin: 5%;
+    margin-top: 50px;
+}
+.stamprally_info div div, .spot_info div {
+    margin-left: 15px;
+}
+
+#included_spots_box {
+    display: flex;
+}
+#spots_list_img {
+    height: 100px
+}
+

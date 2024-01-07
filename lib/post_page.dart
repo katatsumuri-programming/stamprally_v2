@@ -34,7 +34,7 @@ class _postPageState extends State<postPage> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor:  Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
               ),

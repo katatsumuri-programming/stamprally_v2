@@ -84,7 +84,7 @@ class _UnusedRewardPageState extends State<UnusedRewardPage> {
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
+                              backgroundColor: Theme.of(context).primaryColor,
                               foregroundColor: Colors.white,
                               shape: const StadiumBorder(),
                             ),

@@ -37,8 +37,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _isMount = true;
+
     Future(() async {
-      timeLineLimit = 0;
+      timeLineLimit = 10;
       print('aaaa');
       myLocation = Provider.of<MapModel>(context, listen: false).myLocation;
       print(myLocation);
@@ -142,10 +143,10 @@ class _HomePageState extends State<HomePage> {
                     const Spacer(),
                     Text(
                       stampNum.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 35,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue
+                        color: Theme.of(context).primaryColor
                       ),
                     )
                   ],
@@ -208,6 +209,7 @@ class _HomePageState extends State<HomePage> {
                   genres[i]['isCheck'] = false;
                 }
                 tagsString = '';
+                images = [];
                 for (var i = 0; i < timeLine.length; i++) {
                   images.add(await getImageUrl(timeLine[i]['image']));
                 }
@@ -232,11 +234,12 @@ class _HomePageState extends State<HomePage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal:5),
                       child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999999),
-                            border: Border.all(color: genres[i]['isCheck'] ? Colors.blue : Colors.black54),
-                            color: genres[i]['isCheck'] ? Colors.lightBlue.withOpacity(0.1) : Colors.white,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black54),
+                            color: genres[i]['isCheck'] ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.white,
                           ),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical:6, horizontal:15),
@@ -245,7 +248,7 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: genres[i]['isCheck'] ? Colors.blue : Colors.black87,
+                                color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black87,
                               ),
                             ),
                           ),
@@ -267,13 +270,14 @@ class _HomePageState extends State<HomePage> {
                           if (tags.length > 0) {
                             tagsString = tags.join(',');
                             spots_info = await getData('/get/timeline', {'lon':myLocation[1], 'lat':myLocation[0], 'limit':0, 'tag':tagsString, 'user_id': userId});
-                            timeLineLimit = 0;
+                            timeLineLimit = 10;
                           } else {
                             spots_info = await getData('/get/timeline', {'lon':myLocation[1], 'lat':myLocation[0], 'limit':0, 'user_id': userId});
-                            timeLineLimit = 0;
+                            timeLineLimit = 10;
                             tagsString = '';
                           }
                           timeLine = [];
+                          images = [];
                           stampRallies = [];
                           for (var i = 0; i < spots_info.length; i++) {
                             if (spots_info[i]['has_stamprally_tags'] == 'TRUE'){
@@ -314,6 +318,7 @@ class _HomePageState extends State<HomePage> {
           ),
           Flexible(
             child: RefreshIndicator(
+              color: Theme.of(context).primaryColor,
               onRefresh: () async {
                 timeLine = [];
                 stampRallies = [];
@@ -367,9 +372,8 @@ class _HomePageState extends State<HomePage> {
               itemCount: timeLine.length + 1,
               itemBuilder: (context, index) {
                 if (index == timeLine.length) {
-                  print('abc');
                   if (timeLineLimit <= timeLine.length) {
-
+ print('abc');
                     Future(() async {
                       if (searchText != '') {
                         spots_info = await getData('/get/timeline/search', {'lon':myLocation[1], 'lat':myLocation[0], 'limit':timeLine.length, 'text':searchText, 'user_id':userId});
@@ -426,6 +430,7 @@ class _HomePageState extends State<HomePage> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -433,7 +438,7 @@ class _HomePageState extends State<HomePage> {
                             borderRadius: BorderRadius.circular(10),
                             child:
                               (images.length > 0)
-                              ? Image(image: CachedNetworkImageProvider(images[index]))
+                              ? Image(image: CachedNetworkImageProvider(images[index])) //Image.network(images[index])//
                               : Center(child:CircularProgressIndicator())
 
                           ),
@@ -543,7 +548,7 @@ class _HomePageState extends State<HomePage> {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(999999),
-                                      border: Border.all(color: Colors.blue),
+                                      border: Border.all(color: Theme.of(context).primaryColor),
                                     ),
                                     padding: const EdgeInsets.symmetric(vertical:5, horizontal:12),
                                     child: Text(
@@ -551,7 +556,7 @@ class _HomePageState extends State<HomePage> {
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
+                                        color: Theme.of(context).primaryColor,
                                       ),
                                     ),
                                   ),

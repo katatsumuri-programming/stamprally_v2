@@ -79,6 +79,7 @@ class _StampPageState extends State<StampPage> {
                   } else {
                     stampcardList = await getData('/get/user/stampcard', {'user_id':userId});
                   }
+                  _images = [];
                   for (var i = 0; i < stampcardList.length; i++) {
                     if (stampcardList[i]['spot_image'] != null) {
                       _images.add(await getImageUrl(stampcardList[i]['spot_image']));
@@ -106,10 +107,11 @@ class _StampPageState extends State<StampPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal:5),
                         child: InkWell(
+                          borderRadius: BorderRadius.circular(999),
                           child: Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999999),
-                              border: Border.all(color: genres[i]['isCheck'] ? Colors.blue : Colors.black54),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black54),
                               color: genres[i]['isCheck'] ? Colors.lightBlue.withOpacity(0.1) : Colors.white,
                             ),
                             child: Padding(
@@ -119,7 +121,7 @@ class _StampPageState extends State<StampPage> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: genres[i]['isCheck'] ? Colors.blue : Colors.black87,
+                                  color: genres[i]['isCheck'] ? Theme.of(context).primaryColor : Colors.black87,
                                 ),
                               ),
                             ),
@@ -144,6 +146,7 @@ class _StampPageState extends State<StampPage> {
                             } else {
                               stampcardList = await getData('/get/user/stampcard', {'user_id':userId});
                             }
+                            _images = [];
                             for (var i = 0; i < stampcardList.length; i++) {
                               if (stampcardList[i]['spot_image'] != null) {
                                 _images.add(await getImageUrl(stampcardList[i]['spot_image']));

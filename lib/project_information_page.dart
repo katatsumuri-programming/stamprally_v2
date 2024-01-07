@@ -9,6 +9,7 @@ import 'package:stamprally_v2/project_information_page_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:stamprally_v2/map_model.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
@@ -42,6 +43,7 @@ class _ProjectInformationPageState extends State<ProjectInformationPage> {
       print("AA");
       _rewardsList = await getData('/get/rewards', {'id':_projectInfo["id"]}) ;
       _spotsList = await getData('/get/spots/info', {'id':_projectInfo["id"]}) ;
+      Provider.of<RewardsListModel>(context, listen: false).updateFromMyRewardsPage(false);
       Provider.of<RewardsListModel>(context, listen: false).updateRewardList(_rewardsList);
       Provider.of<ProjectInformationPageModel>(context, listen: false).updateSpotList(_spotsList);
       List spotImages = [];
@@ -91,12 +93,13 @@ class _ProjectInformationPageState extends State<ProjectInformationPage> {
             'images/appBarImage.png',
             height: 38,
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: <Widget>[
-              Tab(child: Text("概要")),
-              Tab(child: Text("スポット")),
-              Tab(child: Text("マップ")),
+            isScrollable: true,
+            tabs: [
+              Tab(child: Container(width: 70, child: Center(child: Text('概要')))),
+              Tab(child: Container(width: 70, child: Center(child: Text('スポット')))),
+              Tab(child: Container(width: 70, child: Center(child: Text('マップ')))),
             ],
           ),
         ),
@@ -208,7 +211,7 @@ class _OverviewTabViewState extends State<OverviewTabView> {
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
                             shape: const StadiumBorder(),
                           ),
@@ -269,6 +272,7 @@ class _CheckPointTabViewState extends State<CheckPointTabView> {
             itemCount: model.spotsList.length,
             itemBuilder: (context, int index) {
               return InkWell(
+                borderRadius: BorderRadius.circular(10),
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal:15, vertical:7),
                   child: Row(
@@ -408,7 +412,6 @@ class _MapTabViewState extends State<MapTabView> {
 
       List spotInfo = Provider.of<ProjectInformationPageModel>(context, listen: false).spotsList;
       List spotImages = Provider.of<ProjectInformationPageModel>(context, listen: false).imageUrlList;
-
       for (var i = 0; i < spotInfo.length; i++) {
         markers.add(
           createMarker(LatLng(spotInfo[i]['location']['y'], spotInfo[i]['location']['x']), spotInfo[i], spotImages[i])
@@ -467,6 +470,7 @@ class _MapTabViewState extends State<MapTabView> {
               children: [
                 // 地図表示のタイルレイヤー
                 TileLayer(
+                  tileProvider: CancellableNetworkTileProvider(),
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.app',
                   // additionalOptions: {
@@ -489,8 +493,8 @@ class _MapTabViewState extends State<MapTabView> {
                     child: SizedBox(
                       width: 60,
                       height: 60,
-                      child: ElevatedButton(
-                        child: const Icon(
+                      child: IconButton(
+                        icon: const Icon(
                           Icons.my_location,
                           color: Colors.white,
                         ),
@@ -498,6 +502,7 @@ class _MapTabViewState extends State<MapTabView> {
                           shape: const CircleBorder(
                           ),
                           elevation: 16,
+                          backgroundColor: Theme.of(context).primaryColor
                         ),
                         onPressed: () {
                           model.locationTracking = true;
@@ -519,8 +524,8 @@ class _MapTabViewState extends State<MapTabView> {
                     child: SizedBox(
                       width: 60,
                       height: 60,
-                      child: ElevatedButton(
-                        child: const Icon(
+                      child: IconButton(
+                        icon: const Icon(
                           Icons.location_on,
                           color: Colors.white,
                         ),
@@ -528,13 +533,14 @@ class _MapTabViewState extends State<MapTabView> {
                           shape: const CircleBorder(
                           ),
                           elevation: 16,
+                          backgroundColor: Theme.of(context).primaryColor
                         ),
                         onPressed: () {
                           _isFocusedMarker = true;
                           model.locationTracking = false;
                           model.mapController.fitCamera(
                             CameraFit.bounds(
-                              bounds: bounds,
+                              bounds: Provider.of<ProjectInformationPageModel>(context, listen: false).bounds,
                             )
                           );
                           setState(() {

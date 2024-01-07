@@ -6,6 +6,7 @@ import 'package:stamprally_v2/map_model.dart';
 import 'package:stamprally_v2/post_review.dart';
 import 'package:stamprally_v2/spot_information_model.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
@@ -63,10 +64,10 @@ class _SpotInformationPageState extends State<SpotInformationPage>
 
       }
       List myLocation = Provider.of<MapModel>(context, listen: false).myLocation ;
-      print(Geolocator.distanceBetween(
-          _spotInfo['location']['y'], _spotInfo['location']['x'],
-          myLocation[0], myLocation[1]
-        ));
+      // print(Geolocator.distanceBetween(
+      //     _spotInfo['location']['y'], _spotInfo['location']['x'],
+      //     myLocation[0], myLocation[1]
+      //   ));
       if (
         Geolocator.distanceBetween(
           _spotInfo['location']['y'], _spotInfo['location']['x'],
@@ -144,7 +145,7 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     shape: const StadiumBorder(),
 
@@ -194,13 +195,17 @@ class _SpotInformationPageState extends State<SpotInformationPage>
 
 
                 // タブバー
-                TabBar(
-                  controller: _tabController,
-                  tabs: const [
-                    Tab(text: '概要'),
-                    Tab(text: '口コミ'),
-                    Tab(text: '地図'),
-                  ],
+                Container(
+                  width: double.infinity,
+                  child: TabBar(
+                    isScrollable: true,
+                    controller: _tabController,
+                    tabs:  [
+                      Tab(child: Container(width: 70, child: Center(child: Text('概要')))),
+                      Tab(child: Container(width: 70, child: Center(child: Text('口コミ')))),
+                      Tab(child: Container(width: 70, child: Center(child: Text('地図')))),
+                    ],
+                  ),
                 ),
                 // タブビュー
                 Expanded(
@@ -208,112 +213,117 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                     physics: NeverScrollableScrollPhysics(),
                     controller: _tabController,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Text(
-                                model.spotInfo["explanation"] != null
-                                  ? model.spotInfo["explanation"]
-                                  : "...",
-                                style: TextStyle(
-                                  fontSize: 13,
+                      SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(5.0),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Text(
+                                  model.spotInfo["explanation"] != null
+                                    ? model.spotInfo["explanation"]
+                                    : "...",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8,),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(3),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.location_on, color: Colors.black54),
-                                        const SizedBox(width: 8,),
-                                        Text(
-                                          model.spotInfo["address"] != null
-                                            ? model.spotInfo["address"]
-                                            : "...",
-                                        )
-                                      ],
+                              const SizedBox(height: 8,),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(3),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.location_on, color: Colors.black54),
+                                          const SizedBox(width: 8,),
+                                          Text(
+                                            model.spotInfo["address"] != null
+                                              ? model.spotInfo["address"]
+                                              : "...",
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Divider(),
-                                  Padding(
-                                    padding: const EdgeInsets.all(3),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.web, color: Colors.black54),
-                                        const SizedBox(width: 8,),
-                                        Text(
-                                          model.spotInfo["website"] != null
-                                            ? model.spotInfo["website"]
-                                            : "http://example.com",
-                                        )
-                                      ],
+                                    Divider(),
+                                    Padding(
+                                      padding: const EdgeInsets.all(3),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.web, color: Colors.black54),
+                                          const SizedBox(width: 8,),
+                                          Text(
+                                            model.spotInfo["website"] != null
+                                              ? model.spotInfo["website"]
+                                              : "http://example.com",
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Divider(),
-                                  Padding(
-                                    padding: const EdgeInsets.all(3),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.schedule, color: Colors.black54),
-                                        const SizedBox(width: 8,),
-                                        Text(
-                                          model.spotInfo["openHours"] != null
-                                            ? model.spotInfo["openHours"]
-                                            : "...",
-                                        )
-                                      ],
+                                    Divider(),
+                                    Padding(
+                                      padding: const EdgeInsets.all(3),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.schedule, color: Colors.black54),
+                                          const SizedBox(width: 8,),
+                                          Text(
+                                            model.spotInfo["openHours"] != null
+                                              ? model.spotInfo["openHours"]
+                                              : "...",
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Divider(),
-                                  Padding(
-                                    padding: const EdgeInsets.all(3),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.currency_yen, color: Colors.black54),
-                                        const SizedBox(width: 8,),
-                                        Text(
-                                          model.spotInfo["admissionFee"] != null
-                                            ? model.spotInfo["admissionFee"]
-                                            : "...",
-                                        )
-                                      ],
+                                    Divider(),
+                                    Padding(
+                                      padding: const EdgeInsets.all(3),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.currency_yen, color: Colors.black54),
+                                          const SizedBox(width: 8,),
+                                          Text(
+                                            model.spotInfo["admissionFee"] != null
+                                              ? model.spotInfo["admissionFee"]
+                                              : "...",
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            )
+                                  ],
+                                ),
+                              )
 
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: OutlinedButton.icon(
-                              icon: Icon(Icons.rate_review_outlined),
-                              label: Text('クチコミを書く'),
-                              style: ElevatedButton.styleFrom(
-                                shape: const StadiumBorder(),
+                          Visibility(
+                            visible: (userId != -1),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: OutlinedButton.icon(
+                                icon: Icon(Icons.rate_review_outlined),
+                                label: Text('クチコミを書く'),
+                                style: ElevatedButton.styleFrom(
+                                  shape: const StadiumBorder(),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                  context, MaterialPageRoute(
+                                    builder: (context) => PostReview(),
+                                    // spotInfo: timeLine[index], imageUrl: images[index], reviewsList: []
+                                    //以下を追加
+                                    fullscreenDialog: true,
+                                  )
+                                );
+                                },
                               ),
-                              onPressed: () {
-                                Navigator.push(
-                                context, MaterialPageRoute(
-                                  builder: (context) => PostReview(),
-                                  // spotInfo: timeLine[index], imageUrl: images[index], reviewsList: []
-                                  //以下を追加
-                                  fullscreenDialog: true,
-                                )
-                              );
-                              },
                             ),
                           ),
                           Expanded(
@@ -421,6 +431,7 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                 children: [
                                   // 地図表示のタイルレイヤー
                                   TileLayer(
+                                    tileProvider: CancellableNetworkTileProvider(),
                                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                     userAgentPackageName: 'com.example.app',
                                     // additionalOptions: {
@@ -453,8 +464,8 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                       child: SizedBox(
                                         width: 60,
                                         height: 60,
-                                        child: ElevatedButton(
-                                          child: const Icon(
+                                        child: IconButton(
+                                          icon: const Icon(
                                             Icons.my_location,
                                             color: Colors.white,
                                           ),
@@ -462,6 +473,7 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                             shape: const CircleBorder(
                                             ),
                                             elevation: 16,
+                                            backgroundColor: Theme.of(context).primaryColor
                                           ),
                                           onPressed: () {
                                             mapModel.locationTracking = true;
@@ -483,8 +495,8 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                       child: SizedBox(
                                         width: 60,
                                         height: 60,
-                                        child: ElevatedButton(
-                                          child: const Icon(
+                                        child: IconButton(
+                                          icon: const Icon(
                                             Icons.location_on,
                                             color: Colors.white,
                                           ),
@@ -492,6 +504,7 @@ class _SpotInformationPageState extends State<SpotInformationPage>
                                             shape: const CircleBorder(
                                             ),
                                             elevation: 16,
+                                            backgroundColor: Theme.of(context).primaryColor
                                           ),
                                           onPressed: () {
                                             _isFocusedMarker = true;

@@ -8,6 +8,7 @@ class RewardsListModel extends ChangeNotifier {
   List imageAvailableRewardsUrlList = [];
   List imageUnusedRewardsUrlList = [];
   int pageNumber = 0;
+  bool fromMyRewardsPage = false;
 
 
   void updateRewardsListAvailable(data) {
@@ -47,6 +48,10 @@ class RewardsListModel extends ChangeNotifier {
         imageUrlList = imageAvailableRewardsUrlList;
         break;
     }
+    notifyListeners();
+  }
+  void updateFromMyRewardsPage(data){
+    fromMyRewardsPage = data;
     notifyListeners();
   }
 }

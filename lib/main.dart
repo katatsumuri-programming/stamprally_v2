@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:stamprally_v2/map_model.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,13 +48,15 @@ void main() async {
   var imageBox = await Hive.openBox('image_cache');
   // Hive.box('info_cache');
   // Hive.box('image_cache');
-
-  await infoBox.deleteFromDisk();
-  await imageBox.deleteFromDisk();
-
-  await Hive.openBox('info_cache');
-  await Hive.openBox('image_cache');
-
+  print(infoBox.length);
+  for (var i = 0; i < infoBox.length; i++) {
+    await infoBox.deleteAt(i);
+  }
+  for (var i = 0; i < imageBox.length; i++) {
+    await imageBox.deleteAt(i);
+  }
+  print(infoBox.length);
+  // infoBox = await Hive.openBox('info_cache');
 
   if (auth.currentUser == null) {
     isLoggedIn = false;
@@ -103,7 +106,25 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Stamprally',
       theme: ThemeData(
-        primarySwatch: Colors.lightBlue,
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          surfaceTintColor: Colors.white,
+        ),
+        tabBarTheme: TabBarTheme(
+
+          tabAlignment: TabAlignment.center,
+          indicatorColor: Colors.blue,
+          labelColor: Colors.blue,
+          overlayColor: MaterialStateProperty.all<Color>(Colors.blue.withOpacity(0.05)),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.blue,
+
+          )
+        )
+
       ),
       home: MyHomePage(),
     );
@@ -190,7 +211,8 @@ class _MyHomePageState extends State<MyHomePage> {
             BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'その他'),
           ],
         currentIndex: _currentIndex,
-        fixedColor: Colors.blueAccent,
+        fixedColor: Theme.of(context).primaryColor,
+        backgroundColor: Colors.white,
         onTap: (index) {
           _currentIndex = index;
           setState((){});
@@ -262,15 +284,16 @@ Future<String> getImageUrl(String imagePath) async {
 }
 
 Uri getPendingUri(path, Map<String, dynamic> request) {
-  Uri pendingUri = Uri.http(
-    '192.168.1.67:3000',
+  Uri pendingUri = Uri.https(
+    'deciding-squid-giving.ngrok-free.app',
+    // '192.168.1.67:3000',
     path,
     request.map((key, value) => MapEntry(key, value.toString())),
   );
   return pendingUri;
 }
 
-Future<List> getData(path, Map<String, dynamic> request) async {
+Future<List> getData(path, Map<String, dynamic> request, [bool ischache = true]) async {
   print(request);
   print(path);
 
@@ -282,7 +305,8 @@ Future<List> getData(path, Map<String, dynamic> request) async {
   if (hiveData == null) {
     var response = await http.get(pendingUri);
     resList = jsonDecode(response.body);
-    if(!path.contains('timeline')) infoBox.put(pendingUri.toString(), resList);
+    print(pendingUri.toString());
+    if(!path.contains('timeline') && ischache) infoBox.put(pendingUri.toString(), resList);
   } else {
     resList = hiveData;
   }
@@ -296,8 +320,8 @@ Future<List> getData(path, Map<String, dynamic> request) async {
 Future postData(path, Map<String, dynamic> request) async {
   print(request);
 
-  Uri url = Uri.http(
-    "192.168.1.67:3000",
+  Uri url = Uri.https(
+    "deciding-squid-giving.ngrok-free.app",
     path,
   );
   print(url);
